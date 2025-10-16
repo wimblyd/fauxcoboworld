@@ -1,5 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const bokoVid = document.getElementById("boko-video");
+  const backVid = document.getElementById("boko-video-back");
+  const frontVid = document.getElementById("boko-video-front");
 
   const directions = {
     ArrowLeft: "vid/BokoLeft.mp4",
@@ -32,7 +33,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let lastDirection = "ArrowLeft";
   let currentAction = null;
 
-  // Preloader
+  // Preload
   function preloadVideos(videoList) {
     videoList.forEach(src => {
       const v = document.createElement("video");
@@ -51,34 +52,34 @@ document.addEventListener("DOMContentLoaded", () => {
     "vid/BokoHop.mp4"
   ]);
 
-  // Play
-  function playVideo(src, { loop = false, onend = null } = {}) {
-    currentAction = loop ? null : "special";
-    bokoVid.loop = loop;
-
-    bokoVid.src = src;
-    bokoVid.currentTime = 0;
-
-    // Wait for Load
-    bokoVid.addEventListener("loadeddata", function handleLoad() {
-      bokoVid.removeEventListener("loadeddata", handleLoad);
-      bokoVid.play();
-    });
-
-    if (!loop) {
-      bokoVid.onended = () => {
-        currentAction = null;
-        if (onend) onend();
-        else setDirection(lastDirection);
-      };
-    } else {
-      bokoVid.onended = null;
-    }
-  }
-
+  // Walk
   function setDirection(dirKey) {
     lastDirection = dirKey;
-    playVideo(directions[dirKey], { loop: true });
+    backVid.src = directions[dirKey];
+    backVid.currentTime = 0;
+    backVid.play();
+    currentAction = null;
+  }
+
+  // CW
+  function playSpecial(src, { onend = null } = {}) {
+    currentAction = "special";
+    frontVid.style.visibility = "hidden";
+    frontVid.src = src;
+    frontVid.currentTime = 0;
+
+    frontVid.addEventListener("loadeddata", function handleLoad() {
+      frontVid.removeEventListener("loadeddata", handleLoad);
+      frontVid.style.visibility = "visible";
+      frontVid.play();
+    });
+
+    frontVid.onended = () => {
+      frontVid.style.visibility = "hidden";
+      currentAction = null;
+      if (onend) onend();
+      else setDirection(lastDirection);
+    };
   }
 
   // Battle
@@ -90,12 +91,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function playNext() {
       if (index < sequence.length) {
-        playVideo(sequence[index], {
-          onend: playNext
-        });
+        playSpecial(sequence[index], { onend: playNext });
         index++;
       } else {
-        // sequence finished, return to direction
         setDirection(lastDirection);
       }
     }
@@ -109,14 +107,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Direction
     if (directions[e.key]) {
-      setDirection(e.key);
+      if (!currentAction) setDirection(e.key);
       return;
     }
 
     // Hop
     if (e.key === " ") {
-      if (currentAction) return;
-      playVideo("vid/BokoHop.mp4", { onend: () => setDirection(lastDirection) });
+      if (!currentAction) playSpecial("vid/BokoHop.mp4");
       return;
     }
 
@@ -126,7 +123,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (randomVideo.includes("BokoFight")) {
         playBokoFightSequence();
       } else {
-        playVideo(randomVideo, { onend: () => setDirection(lastDirection) });
+        playSpecial(randomVideo);
       }
       return;
     }
@@ -134,7 +131,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // R = random relax
     if (e.key.toLowerCase() === "r" && !currentAction) {
       const randomVideo = randomRelaxSet[Math.floor(Math.random() * randomRelaxSet.length)];
-      playVideo(randomVideo, { onend: () => setDirection(lastDirection) });
+      playSpecial(randomVideo);
       return;
     }
   });

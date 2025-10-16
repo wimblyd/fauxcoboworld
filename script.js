@@ -16,7 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
     "vid/BokoEventB.mp4",
     "vid/BokoEventC.mp4",
     "vid/BokoEventD.mp4",
-    "vid/BokoFight.mp4" // special chain
+    "vid/BokoFight.mp4"
   ];
 
   const randomRelaxSet = [
@@ -32,12 +32,38 @@ document.addEventListener("DOMContentLoaded", () => {
   let lastDirection = "ArrowLeft";
   let currentAction = null;
 
+  // Preloader
+  function preloadVideos(videoList) {
+    videoList.forEach(src => {
+      const v = document.createElement("video");
+      v.src = src;
+      v.preload = "auto";
+      v.muted = true;
+    });
+  }
+
+  preloadVideos([
+    ...Object.values(directions),
+    ...randomEventSet,
+    ...randomRelaxSet,
+    "vid/BokoRoller.mp4",
+    "vid/BokoLevel.mp4",
+    "vid/BokoHop.mp4"
+  ]);
+
+  // Play
   function playVideo(src, { loop = false, onend = null } = {}) {
+    currentAction = loop ? null : "special";
     bokoVid.loop = loop;
+
     bokoVid.src = src;
     bokoVid.currentTime = 0;
-    bokoVid.play();
-    currentAction = loop ? null : "special";
+
+    // Wait for Load
+    bokoVid.addEventListener("loadeddata", function handleLoad() {
+      bokoVid.removeEventListener("loadeddata", handleLoad);
+      bokoVid.play();
+    });
 
     if (!loop) {
       bokoVid.onended = () => {
@@ -55,31 +81,33 @@ document.addEventListener("DOMContentLoaded", () => {
     playVideo(directions[dirKey], { loop: true });
   }
 
+  // Battle
   function playBokoFightSequence() {
-    // Battle
-    playVideo("vid/BokoFight.mp4", {
-      onend: () => {
-        // Roller
-        playVideo("vid/BokoRoller.mp4", {
-          onend: () => {
-            // Level Up
-            if (Math.random() < 0.15) {
-              playVideo("vid/BokoLevel.mp4", {
-                onend: () => setDirection(lastDirection)
-              });
-            } else {
-              setDirection(lastDirection);
-            }
-          }
+    const sequence = ["vid/BokoFight.mp4", "vid/BokoRoller.mp4"];
+    if (Math.random() < 0.15) sequence.push("vid/BokoLevel.mp4");
+
+    let index = 0;
+
+    function playNext() {
+      if (index < sequence.length) {
+        playVideo(sequence[index], {
+          onend: playNext
         });
+        index++;
+      } else {
+        // sequence finished, return to direction
+        setDirection(lastDirection);
       }
-    });
+    }
+
+    playNext();
   }
 
+  // Key Handlers
   document.addEventListener("keydown", (e) => {
     if (e.repeat) return;
 
-    // Walk
+    // Direction
     if (directions[e.key]) {
       setDirection(e.key);
       return;
@@ -103,7 +131,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // R = random relax animation
+    // R = random relax
     if (e.key.toLowerCase() === "r" && !currentAction) {
       const randomVideo = randomRelaxSet[Math.floor(Math.random() * randomRelaxSet.length)];
       playVideo(randomVideo, { onend: () => setDirection(lastDirection) });
@@ -111,6 +139,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // initialize default
+  // Initialize
   setDirection(lastDirection);
 });

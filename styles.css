@@ -1,0 +1,20 @@
+#boko-popup {
+  width: 127px;
+  height: 158px;
+  overflow: hidden;
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  border: 2px solid #333;
+  background-color: #ccc;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#boko-img {
+  width: 127px;
+  height: 158px;
+  image-rendering: pixelated;
+}

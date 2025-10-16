@@ -36,39 +36,45 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentAction = null;
 
   // Preload
-  const videoCache = {};
-
-  // Walk
   for (const dir of directions) {
     const v = backVids[dir];
-    v.src = `vid/Boko${dir.slice(5)}.mp4`; // assumes ArrowLeft → BokoLeft.mp4
+    v.src = `vid/Boko${dir.slice(5)}.mp4`; // e.g., ArrowLeft -> BokoLeft.mp4
     v.preload = "auto";
     v.muted = true;
-    v.play();
-    videoCache[v.src] = v;
+
+    v.addEventListener("loadeddata", function handleLoad() {
+      v.removeEventListener("loadeddata", handleLoad);
+      v.currentTime = 0; // first frame
+      v.play();
+      v.pause();
+    });
   }
 
-  // Preload 2 Electric Boogaloo
   const allSpecials = [...randomEventSet, ...randomRelaxSet, "vid/BokoRoller.mp4", "vid/BokoLevel.mp4", "vid/BokoHop.mp4"];
+  const videoCache = {};
   allSpecials.forEach(src => {
     const v = document.createElement("video");
     v.src = src;
     v.preload = "auto";
     v.muted = true;
-    v.play(); // buffer it
+    v.play();
     v.pause();
     videoCache[src] = v;
   });
 
+  // Walk
   function showBack(dirKey) {
     for (const dir of directions) {
       backVids[dir].style.visibility = dir === dirKey ? "visible" : "hidden";
     }
     lastDirection = dirKey;
     currentAction = null;
+
+    const v = backVids[dirKey];
+    if (v.paused) v.play();
   }
 
-  // Event and Heal
+  // Event Heal
   function playSpecial(src, { onend = null } = {}) {
     if (currentAction) return;
     currentAction = "special";
@@ -107,7 +113,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document.addEventListener("keydown", e => {
     if (e.repeat) return;
 
-    // Walk
+    // Directions
     if (directions.includes(e.key)) {
       if (!currentAction) showBack(e.key);
       return;

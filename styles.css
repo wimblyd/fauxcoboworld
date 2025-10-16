@@ -16,6 +16,7 @@ html, body {
   height: 158px;
   overflow: hidden;
 }
+
 #boko-popup video {
   position: absolute;
   top: 0;
@@ -23,4 +24,5 @@ html, body {
   width: 127px;
   height: 158px;
   object-fit: contain;
+  visibility: hidden;
 }

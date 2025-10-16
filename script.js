@@ -61,18 +61,27 @@ document.addEventListener("DOMContentLoaded", () => {
     currentAction = null;
   }
 
-  // CW
+  // Event
   function playSpecial(src, { onend = null } = {}) {
+    if (currentAction) return; // Prevent overlapping specials
     currentAction = "special";
+
+    // Hide front video until fully loaded
     frontVid.style.visibility = "hidden";
     frontVid.src = src;
     frontVid.currentTime = 0;
 
-    frontVid.addEventListener("loadeddata", function handleLoad() {
+    // Remove any previous loadeddata listener
+    frontVid.onloadstart = null;
+
+    // Show video when loaded
+    const handleLoad = () => {
       frontVid.removeEventListener("loadeddata", handleLoad);
       frontVid.style.visibility = "visible";
       frontVid.play();
-    });
+    };
+
+    frontVid.addEventListener("loadeddata", handleLoad);
 
     frontVid.onended = () => {
       frontVid.style.visibility = "hidden";
@@ -113,25 +122,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Hop
     if (e.key === " ") {
-      if (!currentAction) playSpecial("vid/BokoHop.mp4");
+      playSpecial("vid/BokoHop.mp4");
       return;
     }
 
     // E = random event
-    if (e.key.toLowerCase() === "e" && !currentAction) {
-      const randomVideo = randomEventSet[Math.floor(Math.random() * randomEventSet.length)];
-      if (randomVideo.includes("BokoFight")) {
-        playBokoFightSequence();
-      } else {
-        playSpecial(randomVideo);
+    if (e.key.toLowerCase() === "e") {
+      if (!currentAction) {
+        const randomVideo = randomEventSet[Math.floor(Math.random() * randomEventSet.length)];
+        if (randomVideo.includes("BokoFight")) {
+          playBokoFightSequence();
+        } else {
+          playSpecial(randomVideo);
+        }
       }
       return;
     }
 
     // R = random relax
-    if (e.key.toLowerCase() === "r" && !currentAction) {
-      const randomVideo = randomRelaxSet[Math.floor(Math.random() * randomRelaxSet.length)];
-      playSpecial(randomVideo);
+    if (e.key.toLowerCase() === "r") {
+      if (!currentAction) {
+        const randomVideo = randomRelaxSet[Math.floor(Math.random() * randomRelaxSet.length)];
+        playSpecial(randomVideo);
+      }
       return;
     }
   });

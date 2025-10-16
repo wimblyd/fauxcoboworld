@@ -11,17 +11,16 @@ html, body {
 }
 
 #boko-popup {
+  position: relative;
   width: 127px;
   height: 158px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  overflow: hidden;
 }
-
-#boko-img {
+#boko-popup video {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 127px;
   height: 158px;
-  display: block;
   object-fit: contain;
-  image-rendering: pixelated;
 }

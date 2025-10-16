@@ -34,12 +34,17 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentAction = null;
 
   // Preload
+  const videoCache = {};
+
   function preloadVideos(videoList) {
     videoList.forEach(src => {
       const v = document.createElement("video");
       v.src = src;
       v.preload = "auto";
       v.muted = true;
+      v.play(); 
+      v.pause(); 
+      videoCache[src] = v;
     });
   }
 
@@ -55,7 +60,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // Walk
   function setDirection(dirKey) {
     lastDirection = dirKey;
-    backVid.src = directions[dirKey];
+    const src = directions[dirKey];
+    backVid.src = src;
     backVid.currentTime = 0;
     backVid.play();
     currentAction = null;
@@ -63,25 +69,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Event
   function playSpecial(src, { onend = null } = {}) {
-    if (currentAction) return; // Prevent overlapping specials
+    if (currentAction) return;
     currentAction = "special";
 
-    // Hide front video until fully loaded
-    frontVid.style.visibility = "hidden";
-    frontVid.src = src;
+    const cachedVid = videoCache[src];
+    if (!cachedVid) return console.warn("Video not preloaded:", src);
+
+    frontVid.src = cachedVid.src;
     frontVid.currentTime = 0;
-
-    // Remove any previous loadeddata listener
-    frontVid.onloadstart = null;
-
-    // Show video when loaded
-    const handleLoad = () => {
-      frontVid.removeEventListener("loadeddata", handleLoad);
-      frontVid.style.visibility = "visible";
-      frontVid.play();
-    };
-
-    frontVid.addEventListener("loadeddata", handleLoad);
+    frontVid.style.visibility = "visible";
 
     frontVid.onended = () => {
       frontVid.style.visibility = "hidden";
@@ -89,6 +85,8 @@ document.addEventListener("DOMContentLoaded", () => {
       if (onend) onend();
       else setDirection(lastDirection);
     };
+
+    frontVid.play();
   }
 
   // Battle
@@ -114,7 +112,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document.addEventListener("keydown", (e) => {
     if (e.repeat) return;
 
-    // Direction
+    // Directions
     if (directions[e.key]) {
       if (!currentAction) setDirection(e.key);
       return;
@@ -126,7 +124,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // E = random event
+    // Random Event (E)
     if (e.key.toLowerCase() === "e") {
       if (!currentAction) {
         const randomVideo = randomEventSet[Math.floor(Math.random() * randomEventSet.length)];
@@ -139,7 +137,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // R = random relax
+    // Random Relax (R)
     if (e.key.toLowerCase() === "r") {
       if (!currentAction) {
         const randomVideo = randomRelaxSet[Math.floor(Math.random() * randomRelaxSet.length)];

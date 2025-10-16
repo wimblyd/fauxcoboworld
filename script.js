@@ -1,112 +1,112 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const bokoImg = document.getElementById("boko-img");
+  const bokoVid = document.getElementById("boko-video");
 
   const directions = {
-    ArrowLeft: "img/BokoLeft.gif",
-    ArrowRight: "img/BokoRight.gif",
-    ArrowUp: "img/BokoUp.gif",
-    ArrowDown: "img/BokoDown.gif",
+    ArrowLeft: "vid/BokoLeft.mp4",
+    ArrowRight: "vid/BokoRight.mp4",
+    ArrowUp: "vid/BokoUp.mp4",
+    ArrowDown: "vid/BokoDown.mp4",
   };
 
   const randomEventSet = [
-    "img/BokoCredit.gif",
-    "img/BokoEvent1.gif",
-    "img/BokoEvent2.gif",
-    "img/BokoEventA.gif",
-    "img/BokoEventB.gif",
-    "img/BokoEventC.gif",
-    "img/BokoEventD.gif",
-    "img/BokoFight.gif" 
+    "vid/BokoCredit.mp4",
+    "vid/BokoEvent1.mp4",
+    "vid/BokoEvent2.mp4",
+    "vid/BokoEventA.mp4",
+    "vid/BokoEventB.mp4",
+    "vid/BokoEventC.mp4",
+    "vid/BokoEventD.mp4",
+    "vid/BokoFight.mp4" // special chain
   ];
 
   const randomRelaxSet = [
-    "img/BokoCake.gif",
-    "img/BokoCamp.gif",
-    "img/BokoFish.gif",
-    "img/BokoKiss.gif",
-    "img/BokoStars.gif",
-    "img/BokoTV.gif",
-    "img/BokoZzz.gif"
+    "vid/BokoCake.mp4",
+    "vid/BokoCamp.mp4",
+    "vid/BokoFish.mp4",
+    "vid/BokoKiss.mp4",
+    "vid/BokoStars.mp4",
+    "vid/BokoTV.mp4",
+    "vid/BokoZzz.mp4"
   ];
 
-  let lastDirection = "ArrowLeft"; // default
+  let lastDirection = "ArrowLeft";
   let currentAction = null;
 
-  function setDirection(dirKey) {
-    bokoImg.src = directions[dirKey];
-    lastDirection = dirKey;
+  function playVideo(src, { loop = false, onend = null } = {}) {
+    bokoVid.loop = loop;
+    bokoVid.src = src;
+    bokoVid.currentTime = 0;
+    bokoVid.play();
+    currentAction = loop ? null : "special";
+
+    if (!loop) {
+      bokoVid.onended = () => {
+        currentAction = null;
+        if (onend) onend();
+        else setDirection(lastDirection);
+      };
+    } else {
+      bokoVid.onended = null;
+    }
   }
 
-  function playTemporaryAnimation(src, duration, callback) {
-    bokoImg.src = src;
-    currentAction = "special";
-    setTimeout(() => {
-      if (callback) callback();
-      else {
-        setDirection(lastDirection);
-        currentAction = null;
-      }
-    }, duration);
+  function setDirection(dirKey) {
+    lastDirection = dirKey;
+    playVideo(directions[dirKey], { loop: true });
   }
 
   function playBokoFightSequence() {
     // Battle
-    playTemporaryAnimation("img/BokoFight.gif", 2000, () => {
-      // Level Roll
-      playTemporaryAnimation("img/BokoRoller.gif", 2000, () => {
-        // Level Up
-        if (Math.random() < 0.15) {
-          playTemporaryAnimation("img/BokoLevel.gif", 2500, () => {
-            setDirection(lastDirection);
-            currentAction = null;
-          });
-        } else {
-          setDirection(lastDirection);
-          currentAction = null;
-        }
-      });
+    playVideo("vid/BokoFight.mp4", {
+      onend: () => {
+        // Roller
+        playVideo("vid/BokoRoller.mp4", {
+          onend: () => {
+            // Level Up
+            if (Math.random() < 0.15) {
+              playVideo("vid/BokoLevel.mp4", {
+                onend: () => setDirection(lastDirection)
+              });
+            } else {
+              setDirection(lastDirection);
+            }
+          }
+        });
+      }
     });
   }
 
   document.addEventListener("keydown", (e) => {
-    if (e.repeat) return; // prevent key spam
+    if (e.repeat) return;
 
     // Walk
     if (directions[e.key]) {
       setDirection(e.key);
-      currentAction = null;
       return;
     }
 
     // Hop
     if (e.key === " ") {
       if (currentAction) return;
-      currentAction = "hop";
-      bokoImg.src = "img/BokoHop.gif";
-      setTimeout(() => {
-        setDirection(lastDirection);
-        currentAction = null;
-      }, 1000);
+      playVideo("vid/BokoHop.mp4", { onend: () => setDirection(lastDirection) });
       return;
     }
 
     // E = random event
     if (e.key.toLowerCase() === "e" && !currentAction) {
-      const randomImage = randomEventSet[Math.floor(Math.random() * randomEventSet.length)];
-
-      if (randomImage.includes("BokoFight")) {
-        // Special chained event!
+      const randomVideo = randomEventSet[Math.floor(Math.random() * randomEventSet.length)];
+      if (randomVideo.includes("BokoFight")) {
         playBokoFightSequence();
       } else {
-        playTemporaryAnimation(randomImage, 1500);
+        playVideo(randomVideo, { onend: () => setDirection(lastDirection) });
       }
       return;
     }
 
-    // R = random heal
+    // R = random relax animation
     if (e.key.toLowerCase() === "r" && !currentAction) {
-      const randomImage = randomRelaxSet[Math.floor(Math.random() * randomRelaxSet.length)];
-      playTemporaryAnimation(randomImage, 2000);
+      const randomVideo = randomRelaxSet[Math.floor(Math.random() * randomRelaxSet.length)];
+      playVideo(randomVideo, { onend: () => setDirection(lastDirection) });
       return;
     }
   });

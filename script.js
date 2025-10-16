@@ -1,13 +1,15 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const backVid = document.getElementById("boko-video-back");
   const frontVid = document.getElementById("boko-video-front");
 
-  const directions = {
-    ArrowLeft: "vid/BokoLeft.mp4",
-    ArrowRight: "vid/BokoRight.mp4",
-    ArrowUp: "vid/BokoUp.mp4",
-    ArrowDown: "vid/BokoDown.mp4",
+  // Boko
+  const backVids = {
+    ArrowLeft: document.getElementById("back-left"),
+    ArrowRight: document.getElementById("back-right"),
+    ArrowUp: document.getElementById("back-up"),
+    ArrowDown: document.getElementById("back-down"),
   };
+
+  const directions = Object.keys(backVids);
 
   const randomEventSet = [
     "vid/BokoCredit.mp4",
@@ -36,46 +38,42 @@ document.addEventListener("DOMContentLoaded", () => {
   // Preload
   const videoCache = {};
 
-  function preloadVideos(videoList) {
-    videoList.forEach(src => {
-      const v = document.createElement("video");
-      v.src = src;
-      v.preload = "auto";
-      v.muted = true;
-      v.play(); 
-      v.pause(); 
-      videoCache[src] = v;
-    });
+  // Walk
+  for (const dir of directions) {
+    const v = backVids[dir];
+    v.src = `vid/Boko${dir.slice(5)}.mp4`; // assumes ArrowLeft → BokoLeft.mp4
+    v.preload = "auto";
+    v.muted = true;
+    v.play();
+    videoCache[v.src] = v;
   }
 
-  preloadVideos([
-    ...Object.values(directions),
-    ...randomEventSet,
-    ...randomRelaxSet,
-    "vid/BokoRoller.mp4",
-    "vid/BokoLevel.mp4",
-    "vid/BokoHop.mp4"
-  ]);
+  // Preload 2 Electric Boogaloo
+  const allSpecials = [...randomEventSet, ...randomRelaxSet, "vid/BokoRoller.mp4", "vid/BokoLevel.mp4", "vid/BokoHop.mp4"];
+  allSpecials.forEach(src => {
+    const v = document.createElement("video");
+    v.src = src;
+    v.preload = "auto";
+    v.muted = true;
+    v.play(); // buffer it
+    v.pause();
+    videoCache[src] = v;
+  });
 
-  // Walk
-  function setDirection(dirKey) {
+  function showBack(dirKey) {
+    for (const dir of directions) {
+      backVids[dir].style.visibility = dir === dirKey ? "visible" : "hidden";
+    }
     lastDirection = dirKey;
-    const src = directions[dirKey];
-    backVid.src = src;
-    backVid.currentTime = 0;
-    backVid.play();
     currentAction = null;
   }
 
-  // Event
+  // Event and Heal
   function playSpecial(src, { onend = null } = {}) {
     if (currentAction) return;
     currentAction = "special";
 
-    const cachedVid = videoCache[src];
-    if (!cachedVid) return console.warn("Video not preloaded:", src);
-
-    frontVid.src = cachedVid.src;
+    frontVid.src = videoCache[src].src;
     frontVid.currentTime = 0;
     frontVid.style.visibility = "visible";
 
@@ -83,9 +81,8 @@ document.addEventListener("DOMContentLoaded", () => {
       frontVid.style.visibility = "hidden";
       currentAction = null;
       if (onend) onend();
-      else setDirection(lastDirection);
+      else showBack(lastDirection);
     };
-
     frontVid.play();
   }
 
@@ -95,26 +92,24 @@ document.addEventListener("DOMContentLoaded", () => {
     if (Math.random() < 0.15) sequence.push("vid/BokoLevel.mp4");
 
     let index = 0;
-
     function playNext() {
       if (index < sequence.length) {
         playSpecial(sequence[index], { onend: playNext });
         index++;
       } else {
-        setDirection(lastDirection);
+        showBack(lastDirection);
       }
     }
-
     playNext();
   }
 
   // Key Handlers
-  document.addEventListener("keydown", (e) => {
+  document.addEventListener("keydown", e => {
     if (e.repeat) return;
 
-    // Directions
-    if (directions[e.key]) {
-      if (!currentAction) setDirection(e.key);
+    // Walk
+    if (directions.includes(e.key)) {
+      if (!currentAction) showBack(e.key);
       return;
     }
 
@@ -148,5 +143,5 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // Initialize
-  setDirection(lastDirection);
+  showBack(lastDirection);
 });

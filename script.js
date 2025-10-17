@@ -148,6 +148,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  // Click to Play
    const clickOverlay = document.getElementById("start");
 
   clickOverlay.style.display = "flex";

@@ -148,6 +148,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Initialize
+  // Focus & Initialize
+  window.focus();
   showBack(lastDirection);
 });

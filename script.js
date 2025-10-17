@@ -148,6 +148,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+   const clickOverlay = document.getElementById("start");
+
+  clickOverlay.style.display = "flex";
+
+  clickOverlay.addEventListener("click", () => {
+    clickOverlay.style.display = "none"; // hide it
+  });
+
   // Focus & Initialize
   window.focus();
   showBack(lastDirection);

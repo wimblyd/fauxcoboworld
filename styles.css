@@ -28,6 +28,11 @@ html, body {
   visibility: hidden;
 }
 
+#boko-wrapper iframe {
+  pointer-events: auto;
+  touch-action: manipulation;
+}
+
 #start {
   position: absolute;
   top: 0;

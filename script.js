@@ -38,19 +38,26 @@ document.addEventListener("DOMContentLoaded", () => {
   // Preload
   for (const dir of directions) {
     const v = backVids[dir];
-    v.src = `vid/Boko${dir.slice(5)}.mp4`; // e.g., ArrowLeft -> BokoLeft.mp4
+    v.src = `vid/Boko${dir.slice(5)}.mp4`; // ArrowLeft -> BokoLeft.mp4
     v.preload = "auto";
     v.muted = true;
 
     v.addEventListener("loadeddata", function handleLoad() {
       v.removeEventListener("loadeddata", handleLoad);
-      v.currentTime = 0; // first frame
+      v.currentTime = 0;
       v.play();
       v.pause();
     });
   }
 
-  const allSpecials = [...randomEventSet, ...randomRelaxSet, "vid/BokoRoller.mp4", "vid/BokoLevel.mp4", "vid/BokoHop.mp4"];
+  const allSpecials = [
+    ...randomEventSet,
+    ...randomRelaxSet,
+    "vid/BokoRoller.mp4",
+    "vid/BokoLevel.mp4",
+    "vid/BokoHop.mp4"
+  ];
+
   const videoCache = {};
   allSpecials.forEach(src => {
     const v = document.createElement("video");
@@ -74,7 +81,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (v.paused) v.play();
   }
 
-  // Event Heal
+  // Events and Heals
   function playSpecial(src, { onend = null } = {}) {
     if (currentAction) return;
     currentAction = "special";
@@ -89,6 +96,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (onend) onend();
       else showBack(lastDirection);
     };
+
     frontVid.play();
   }
 
@@ -109,7 +117,7 @@ document.addEventListener("DOMContentLoaded", () => {
     playNext();
   }
 
-  // Key Handlers
+  // Desktop Controls
   document.addEventListener("keydown", e => {
     if (e.repeat) return;
 
@@ -119,7 +127,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // Hop
+    // Hop (space)
     if (e.key === " ") {
       playSpecial("vid/BokoHop.mp4");
       return;
@@ -129,11 +137,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.key.toLowerCase() === "e") {
       if (!currentAction) {
         const randomVideo = randomEventSet[Math.floor(Math.random() * randomEventSet.length)];
-        if (randomVideo.includes("BokoFight")) {
-          playBokoFightSequence();
-        } else {
-          playSpecial(randomVideo);
-        }
+        if (randomVideo.includes("BokoFight")) playBokoFightSequence();
+        else playSpecial(randomVideo);
       }
       return;
     }
@@ -149,71 +154,76 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // Click to Play
-   const clickOverlay = document.getElementById("start");
-
+  const clickOverlay = document.getElementById("start");
   clickOverlay.style.display = "flex";
-
   clickOverlay.addEventListener("click", () => {
-    clickOverlay.style.display = "none"; // hide it
+    clickOverlay.style.display = "none";
   });
 
-  // Focus & Initialize
+  // Initialize
   window.focus();
   showBack(lastDirection);
-});
 
-// Mobile Controls
+  // Mobile Controls
+  const SWIPE_THRESHOLD = 50;
+  const TAP_THRESHOLD = 10;
+  let touchStartX = 0;
+  let touchStartY = 0;
+  let lastTap = 0;
+  let doubleTapPending = false;
 
-let touchStartX = 0;
-let touchStartY = 0;
-let lastTap = 0;
-const popup = document.getElementById('boko-popup');
+  const popup = document.getElementById("boko-popup");
+  if (popup) {
+    // Ensure popup covers whole area
+    popup.style.touchAction = "none"; // Prevent pull-to-refresh / back-swipe
 
-popup.addEventListener('touchstart', e => {
-  const t = e.touches[0];
-  touchStartX = t.clientX;
-  touchStartY = t.clientY;
-});
+    popup.addEventListener("touchstart", e => {
+      e.preventDefault();
+      const t = e.touches[0];
+      touchStartX = t.clientX;
+      touchStartY = t.clientY;
+    });
 
-popup.addEventListener('touchend', e => {
-  const t = e.changedTouches[0];
-  const dx = t.clientX - touchStartX;
-  const dy = t.clientY - touchStartY;
-  const now = Date.now();
+    popup.addEventListener("touchend", e => {
+      e.preventDefault();
+      const t = e.changedTouches[0];
+      const dx = t.clientX - touchStartX;
+      const dy = t.clientY - touchStartY;
+      const now = Date.now();
 
-  // Double Tap
-  if (now - lastTap < 300) {
-    lastTap = 0; // reset
-    if (!currentAction) {
-      const set = Math.random() < 0.5 ? randomEventSet : randomRelaxSet;
-      const randomVideo = set[Math.floor(Math.random() * set.length)];
-      if (randomVideo.includes("BokoFight")) {
-        playBokoFightSequence();
+      // Double Tap
+      if (now - lastTap < 300) {
+        doubleTapPending = true;
+        lastTap = 0;
+        if (!currentAction) {
+          const set = Math.random() < 0.5 ? randomEventSet : randomRelaxSet;
+          const randomVideo = set[Math.floor(Math.random() * set.length)];
+          if (randomVideo.includes("BokoFight")) playBokoFightSequence();
+          else playSpecial(randomVideo);
+        }
+        setTimeout(() => (doubleTapPending = false), 300);
+        return;
+      }
+
+      lastTap = now;
+
+      // Swipe Detect
+      if (Math.abs(dx) > Math.abs(dy)) {
+        if (dx > SWIPE_THRESHOLD && !currentAction) showBack("ArrowRight");
+        else if (dx < -SWIPE_THRESHOLD && !currentAction) showBack("ArrowLeft");
       } else {
-        playSpecial(randomVideo);
+        if (dy > SWIPE_THRESHOLD && !currentAction) showBack("ArrowDown");
+        else if (dy < -SWIPE_THRESHOLD && !currentAction) showBack("ArrowUp");
       }
-    }
-    return;
-  }
 
-  lastTap = now;
-
-  // Swipe
-  if (Math.abs(dx) > Math.abs(dy)) {
-    if (dx > 30 && !currentAction) showBack('ArrowRight');
-    else if (dx < -30 && !currentAction) showBack('ArrowLeft');
-  } else {
-    if (dy > 30 && !currentAction) showBack('ArrowDown');
-    else if (dy < -30 && !currentAction) showBack('ArrowUp');
-  }
-
-  // Tap
-  if (Math.abs(dx) < 10 && Math.abs(dy) < 10) {
-    setTimeout(() => {
-      // Only trigger hop if it wasn't part of a double tap
-      if (Date.now() - lastTap >= 300 && !currentAction) {
-        playSpecial("vid/BokoHop.mp4");
+      // Tap
+      if (Math.abs(dx) < TAP_THRESHOLD && Math.abs(dy) < TAP_THRESHOLD) {
+        setTimeout(() => {
+          if (!doubleTapPending && !currentAction) {
+            playSpecial("vid/BokoHop.mp4");
+          }
+        }, 300);
       }
-    }, 300);
+    });
   }
 });

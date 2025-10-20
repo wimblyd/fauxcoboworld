@@ -161,3 +161,59 @@ document.addEventListener("DOMContentLoaded", () => {
   window.focus();
   showBack(lastDirection);
 });
+
+// Mobile Controls
+
+let touchStartX = 0;
+let touchStartY = 0;
+let lastTap = 0;
+const popup = document.getElementById('boko-popup');
+
+popup.addEventListener('touchstart', e => {
+  const t = e.touches[0];
+  touchStartX = t.clientX;
+  touchStartY = t.clientY;
+});
+
+popup.addEventListener('touchend', e => {
+  const t = e.changedTouches[0];
+  const dx = t.clientX - touchStartX;
+  const dy = t.clientY - touchStartY;
+  const now = Date.now();
+
+  // Double Tap
+  if (now - lastTap < 300) {
+    lastTap = 0; // reset
+    if (!currentAction) {
+      const set = Math.random() < 0.5 ? randomEventSet : randomRelaxSet;
+      const randomVideo = set[Math.floor(Math.random() * set.length)];
+      if (randomVideo.includes("BokoFight")) {
+        playBokoFightSequence();
+      } else {
+        playSpecial(randomVideo);
+      }
+    }
+    return;
+  }
+
+  lastTap = now;
+
+  // Swipe
+  if (Math.abs(dx) > Math.abs(dy)) {
+    if (dx > 30 && !currentAction) showBack('ArrowRight');
+    else if (dx < -30 && !currentAction) showBack('ArrowLeft');
+  } else {
+    if (dy > 30 && !currentAction) showBack('ArrowDown');
+    else if (dy < -30 && !currentAction) showBack('ArrowUp');
+  }
+
+  // Tap
+  if (Math.abs(dx) < 10 && Math.abs(dy) < 10) {
+    setTimeout(() => {
+      // Only trigger hop if it wasn't part of a double tap
+      if (Date.now() - lastTap >= 300 && !currentAction) {
+        playSpecial("vid/BokoHop.mp4");
+      }
+    }, 300);
+  }
+});

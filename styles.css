@@ -15,6 +15,7 @@ html, body {
   width: 127px;
   height: 158px;
   overflow: hidden;
+  touch-action: none;
 }
 
 #boko-popup video {
